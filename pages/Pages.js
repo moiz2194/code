@@ -9,19 +9,25 @@ const UserModel = require('../Database/UserSchema');
 const ProductModel = require('../Database/ProductSchema');
 const Authentication = require('../pages/Authentication');
 router.get('/',(req,res)=>{
-    console.log('homePage started');
-    // res.send('Home Page');
+    // console.log('homePage started');
+    res.status(200).send('Home Page');
 })
 router.get('/collections', Authentication, (req,res)=>{
+  try {
     const rootUser = req.rootUser;
     // console.log(rootUser);
     res.send(rootUser);
+  } catch (error) {
+    res.status(500).send(error)
+
+  }
 })
 
 router.post('/signup',async (req,res)=>{
     console.log(req.body);
-    const {name,email,password,confirmpassword,birthday} = req.body;
     try {
+    const {name,email,password,confirmpassword,birthday} = req.body;
+
         if(!name || !email || !password){
             res.status(201).json({msg:"Please Fill all Fields"})
         }
@@ -50,6 +56,7 @@ router.post('/signup',async (req,res)=>{
 })
 router.post('/login',async (req,res)=>{
     // console.log(req.body);
+   try {
     const {email,password} = req.body;
     if(!email || !password){
         res.send({msg:'Invalid Credentials'});
@@ -70,8 +77,13 @@ router.post('/login',async (req,res)=>{
             res.send({msg:'Invalid Credentials'});
         }
     }
+   } catch (error) {
+    res.status(500).send(error)
+
+   }
 })
 router.get('/isloggedin', async (req,res)=>{
+   try {
     const token = req.cookies.jwttoken; 
     const verifyToken = jwt.verify(token,process.env.SECRET_KEY);
     const rootUser = await UserModel.findOne({_id:verifyToken._id,"tokens.token":token});
@@ -82,12 +94,19 @@ router.get('/isloggedin', async (req,res)=>{
             res.send({msg:"loggedin",data:rootUser});
         }
     }
+   } catch (error) {
+    res.status(500).send(error)
+   }
 })
 router.post('/searchUser', async(req,res)=>{
+try {
     const {email} = req.body;
     console.log(email);
     const user = await UserModel.find({email});
     res.send( { msg:"success", userdata: user } );
+} catch (error) {
+    res.status(500).send(error)
+}
 })
 router.get('/allUser', async(req,res)=>{
     try {
@@ -101,12 +120,13 @@ router.get('/allUser', async(req,res)=>{
 })
 
 router.post('/updateUser/:id', async (req,res)=>{
-    console.log(req.body);
-    console.log(req.params.id);
-    var id = req.params.id;
-    const {name,email,totalbalance,ppstart,ppadvance,pppro,initialcapital,grancias,bloqueado,disponible,miembrostotale,derivadostotale,rangostotale,ultimorango,saldo,cartera,mymembresia,estrategia,ganaciasretirades,totaldisponible,pic,tc,membreciabtc500,membreciabtc1000} = req.body;
-    console.log(id);
+ 
     try {
+        console.log(req.body);
+        console.log(req.params.id);
+        var id = req.params.id;
+        const {name,email,totalbalance,ppstart,ppadvance,pppro,initialcapital,grancias,bloqueado,disponible,miembrostotale,derivadostotale,rangostotale,ultimorango,saldo,cartera,mymembresia,estrategia,ganaciasretirades,totaldisponible,pic,tc,membreciabtc500,membreciabtc1000} = req.body;
+        console.log(id);
         const result = await UserModel.updateOne({_id:id},{ $set:{name,email,totalbalance,ppstart,ppadvance,pppro,initialcapital,grancias,bloqueado,disponible,miembrostotale,derivadostotale,rangostotale,ultimorango,saldo,cartera,mymembresia,estrategia,ganaciasretirades,totaldisponible,pic,tc,membreciabtc500,membreciabtc1000}})
         console.log(result);
         if(result){
@@ -118,12 +138,13 @@ router.post('/updateUser/:id', async (req,res)=>{
 })
 router.post('/bankinfo', async (req,res)=>{
     // console.log(req.body);
+    try {
     const { fullname, bankname, iban, phone, country } = req.body;
     const token = req.cookies.jwttoken; 
     const verifyToken = jwt.verify(token,process.env.SECRET_KEY);
     const rootUser = await UserModel.findOne({_id:verifyToken._id,"tokens.token":token});
     // console.log(rootUser);
-    try {
+   
         const result = await UserModel.updateOne({_id:rootUser._id},{ $set:{fullname, bankname, iban, phone, country}});
         // console.log(result);
         if(result){
@@ -134,13 +155,14 @@ router.post('/bankinfo', async (req,res)=>{
     }
 })
 router.post('/withdrawrequest', async (req,res)=>{
+    try {
     console.log(req.body);
     const { withdraw } = req.body;
     const token = req.cookies.jwttoken; 
     const verifyToken = jwt.verify(token,process.env.SECRET_KEY);
     const rootUser = await UserModel.findOne({_id:verifyToken._id,"tokens.token":token});
     // console.log(rootUser);
-    try {
+
         // const result = await UserModel.updateOne({ _id: rootUser._id }, { $set: { withdraws: [] } });
         const result = await UserModel.findOne({ _id: rootUser._id},{withdraws: 1})
         // console.log(result.withdraws.length);
@@ -174,8 +196,9 @@ router.get('/AllwithdrawalRequests',async (req,res)=>{
         }
 })
 router.post('/getuserdata',async (req,res)=>{
-    const { id } = req.body;
     try {
+    const { id } = req.body;
+
         const result = await UserModel.findOne({_id:id});
         if(result){
             // console.log(result);
@@ -198,6 +221,7 @@ router.get('/getuserdata/:id',async (req,res)=>{
 })
 
 router.get('/logout',async(req,res)=>{
+  try {
     const token = req.cookies.jwttoken; 
     const verifyToken = jwt.verify(token,process.env.SECRET_KEY);
     const rootUser = await UserModel.findOne({_id:verifyToken._id,"tokens.token":token});
@@ -206,18 +230,21 @@ router.get('/logout',async(req,res)=>{
         res.send({msg:"loggedOut"});
     }
     // res.redirect('/');
+  } catch (error) {
+    res.status(500).send(error)
+  }
 })
 
 router.post('/addmember', async (req,res)=>{
     // console.log(req.params.id);
     // console.log(req.body);
+    try {
 
     const token = req.cookies.jwttoken; 
     const verifyToken = jwt.verify(token,process.env.SECRET_KEY);
     const rootUser = await UserModel.findOne({_id:verifyToken._id,"tokens.token":token});  // current active user
     
     const {name,email,password,confirmpassword,birthday} = req.body;
-    try {
         if(!name || !email || !password){
             res.status(201).json({msg:"Please Fill all Fields"})
         }
@@ -262,8 +289,9 @@ const uploadProductimg = multer({
 
 var product_id = "";
 router.post('/addproduct',async (req,res)=>{
-    const {title,description,price,collecton,rating,overview,type,likes,marketplace,blockchain,expireDate,discount,status} = req.body;
     try {
+    const {title,description,price,collecton,rating,overview,type,likes,marketplace,blockchain,expireDate,discount,status} = req.body;
+
         console.log(req.body);
         const AddedProduct = ProductModel({title,description,price,collecton,rating,overview,type,likes,marketplace,blockchain,expireDate,discount,status,image:""});
         const result = await AddedProduct.save();
@@ -313,6 +341,7 @@ router.get('/getProductByid/:id',async (req,res)=>{
     res.send(result);
 })
 router.post('/updatePassword',async(req,res)=>{
+   try {
     console.log(req.body);
     let {oldPassword,newPassword,confirmNewPassword} = req.body;
     if(!oldPassword || !newPassword || !confirmNewPassword){
@@ -338,6 +367,9 @@ router.post('/updatePassword',async(req,res)=>{
     }else{
         res.send({msg:"incorrect Password"});
     }
+   } catch (error) {
+    res.status(500).send(error)
+   }
 })
 router.get('/userData',async (req,res)=>{
     try {
